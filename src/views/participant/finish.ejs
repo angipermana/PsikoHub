@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+  <div class="max-w-md w-full bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100 text-center p-8">
+    
+    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+      <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    
+    <h2 class="text-2xl font-bold text-gray-900 mb-2">Ujian Selesai!</h2>
+    <p class="text-gray-600 mb-6">
+      Terima kasih telah berpartisipasi dalam ujian <strong><%= project.name %></strong>.
+      Jawaban Anda telah berhasil disimpan di dalam sistem kami.
+    </p>
+
+    <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-500 text-left">
+      Informasi selanjutnya mengenai hasil seleksi akan dihubungi langsung oleh pihak rekruter / klien terkait.
+    </div>
+
+    <div class="mt-8">
+      <p class="text-xs text-gray-400">Anda dapat menutup halaman browser ini.</p>
+    </div>
+
+  </div>
+</body>
+</html>

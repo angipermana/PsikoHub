@@ -1,0 +1,155 @@
+<%- include('../../partials/header') %>
+
+<div class="py-6">
+  <div class="px-4 sm:px-6 md:px-0">
+    <div class="flex items-center space-x-4">
+      <a href="/admin/projects" class="text-gray-400 hover:text-gray-500">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </a>
+      <h1 class="text-2xl font-semibold text-gray-900"><%= title %></h1>
+    </div>
+  </div>
+
+  <div class="px-4 sm:px-6 md:px-0 mt-8 max-w-4xl">
+    <% if (error) { %>
+      <div class="rounded-md bg-red-50 p-4 mb-6">
+        <div class="flex">
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800"><%= error %></h3>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <form action="/admin/projects/<%= project.id %>" method="POST" class="space-y-8 divide-y divide-gray-200 bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+      
+      <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+        <div class="sm:col-span-6">
+          <label class="block text-sm font-medium text-gray-500">Link Akses Peserta (Hanya Baca)</label>
+          <div class="mt-1 flex rounded-md shadow-sm">
+            <span class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">
+              URL
+            </span>
+            <input type="text" readonly value="<%= process.env.BASE_URL || 'http://localhost:3000' %>/test/<%= project.accessToken %>" class="block w-full min-w-0 flex-1 rounded-none rounded-r-md border-gray-300 px-3 py-2 sm:text-sm bg-gray-50">
+          </div>
+        </div>
+
+        <div class="sm:col-span-6">
+          <label for="name" class="block text-sm font-medium text-gray-700">Nama Project *</label>
+          <div class="mt-1">
+            <input type="text" name="name" id="name" value="<%= project.name %>" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+          </div>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label for="clientId" class="block text-sm font-medium text-gray-700">Pilih Klien *</label>
+          <div class="mt-1">
+            <select id="clientId" name="clientId" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+              <% clients.forEach(c => { %>
+                <option value="<%= c.id %>" <%= project.clientId === c.id ? 'selected' : '' %>><%= c.institutionName %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label for="packageId" class="block text-sm font-medium text-gray-700">Pilih Paket Tes *</label>
+          <div class="mt-1">
+            <select id="packageId" name="packageId" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+              <% packages.forEach(p => { %>
+                <option value="<%= p.id %>" <%= project.packageId === p.id ? 'selected' : '' %>><%= p.name %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label for="activeFrom" class="block text-sm font-medium text-gray-700">Aktif Dari Waktu (Opsional)</label>
+          <div class="mt-1">
+            <% 
+              let fromStr = '';
+              if(project.activeFrom) {
+                // Konversi ISO string jadi format YYYY-MM-DDTHH:MM yang dimengerti input type="datetime-local"
+                const d = new Date(project.activeFrom);
+                fromStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0,16);
+              }
+            %>
+            <input type="datetime-local" name="activeFrom" id="activeFrom" value="<%= fromStr %>" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+          </div>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label for="activeUntil" class="block text-sm font-medium text-gray-700">Aktif Sampai Waktu (Opsional)</label>
+          <div class="mt-1">
+            <% 
+              let untilStr = '';
+              if(project.activeUntil) {
+                const d = new Date(project.activeUntil);
+                untilStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0,16);
+              }
+            %>
+            <input type="datetime-local" name="activeUntil" id="activeUntil" value="<%= untilStr %>" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-8">
+        <div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Pengaturan Proctoring & Status</h3>
+        </div>
+        
+        <div class="mt-6 space-y-4">
+          <div class="relative flex items-start">
+            <div class="flex h-5 items-center">
+              <input id="proctoringFullscreen" name="proctoringFullscreen" type="checkbox" <%= project.proctoringFullscreen ? 'checked' : '' %> class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+            <div class="ml-3 text-sm">
+              <label for="proctoringFullscreen" class="font-medium text-gray-700">Wajibkan Mode Layar Penuh (Fullscreen)</label>
+            </div>
+          </div>
+          
+          <div class="relative flex items-start">
+            <div class="flex h-5 items-center">
+              <input id="proctoringTab" name="proctoringTab" type="checkbox" <%= project.proctoringTab ? 'checked' : '' %> class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+            <div class="ml-3 text-sm">
+              <label for="proctoringTab" class="font-medium text-gray-700">Pengawasan Tab Browser</label>
+            </div>
+          </div>
+
+          <div class="relative flex items-start">
+            <div class="flex h-5 items-center">
+              <input id="proctoringCamera" name="proctoringCamera" type="checkbox" <%= project.proctoringCamera ? 'checked' : '' %> class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+            <div class="ml-3 text-sm">
+              <label for="proctoringCamera" class="font-medium text-gray-700">Gunakan Kamera (Webcam)</label>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200 mt-6 pt-4"></div>
+
+          <div class="relative flex items-start">
+            <div class="flex h-5 items-center">
+              <input id="isActive" name="isActive" type="checkbox" <%= project.isActive ? 'checked' : '' %> class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+            </div>
+            <div class="ml-3 text-sm">
+              <label for="isActive" class="font-medium text-gray-700">Project Aktif</label>
+              <p class="text-gray-500">Matikan untuk menonaktifkan link ujian sepenuhnya.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-5">
+        <div class="flex justify-end">
+          <a href="/admin/projects" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Batal</a>
+          <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Update Project</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

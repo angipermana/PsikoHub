@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  CLIENT
+  PARTICIPANT
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  LIKERT
+  SHORT_ANSWER
+}
+
+enum SessionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum EventType {
+  TAB_SWITCH
+  FULLSCREEN_EXIT
+  CAMERA_OFF
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(PARTICIPANT)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  // Relations
+  clientProfile ClientProfile?
+  participants  Participant[]
+  questions     Question[]     @relation("CreatedQuestions")
+  packages      Package[]      @relation("CreatedPackages")
+}
+
+model ClientProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  institutionName String
+  contactPhone    String?
+  notes           String?
+  
+  // Relations
+  user     User      @relation(fields: [userId], references: [id])
+  projects Project[]
+}
+
+model Question {
+  id               String       @id @default(uuid())
+  createdBy        String
+  title            String?
+  content          String
+  questionType     QuestionType
+  dimensionGroup   String?
+  categoryLabel    String?
+  timeLimitSeconds Int?
+  isRandomizable   Boolean      @default(true)
+  orderIndex       Int?
+
+  // Relations
+  user            User              @relation("CreatedQuestions", fields: [createdBy], references: [id])
+  options         QuestionOption[]
+  packageQuestions PackageQuestion[]
+  sessionAnswers  SessionAnswer[]
+}
+
+model QuestionOption {
+  id              String  @id @default(uuid())
+  questionId      String
+  label           String? // e.g. A, B, C
+  content         String
+  scoreValue      Int     @default(0)
+  isReverseScored Boolean @default(false)
+  orderIndex      Int?
+
+  // Relations
+  question       Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  sessionAnswers SessionAnswer[]
+}
+
+model Package {
+  id                 String   @id @default(uuid())
+  createdBy          String
+  name               String
+  instructions       String?
+  totalTimeMinutes   Int?
+  randomizeQuestions Boolean  @default(false)
+  isActive           Boolean  @default(true)
+
+  // Relations
+  user     User              @relation("CreatedPackages", fields: [createdBy], references: [id])
+  projects Project[]
+  questions PackageQuestion[]
+}
+
+model PackageQuestion {
+  id         String @id @default(uuid())
+  packageId  String
+  questionId String
+  orderIndex Int?
+
+  // Relations
+  package  Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, questionId])
+}
+
+model Project {
+  id                   String    @id @default(uuid())
+  clientId             String
+  packageId            String
+  name                 String
+  accessToken          String    @unique // nanoid
+  proctoringFullscreen Boolean   @default(true)
+  proctoringTab        Boolean   @default(true)
+  proctoringCamera     Boolean   @default(true)
+  activeFrom           DateTime?
+  activeUntil          DateTime?
+  isActive             Boolean   @default(true)
+
+  // Relations
+  clientProfile ClientProfile @relation(fields: [clientId], references: [id])
+  package       Package       @relation(fields: [packageId], references: [id])
+  participants  Participant[]
+  sessions      TestSession[]
+}
+
+model Participant {
+  id                String   @id @default(uuid())
+  userId            String
+  projectId         String
+  customFieldValues Json?
+  registeredAt      DateTime @default(now())
+
+  // Relations
+  user     User          @relation(fields: [userId], references: [id])
+  project  Project       @relation(fields: [projectId], references: [id])
+  sessions TestSession[]
+
+  @@unique([userId, projectId])
+}
+
+model TestSession {
+  id             String        @id @default(uuid())
+  participantId  String
+  projectId      String
+  status         SessionStatus @default(NOT_STARTED)
+  startedAt      DateTime?
+  submittedAt    DateTime?
+  durationSeconds Int?
+  tabSwitchCount Int           @default(0)
+
+  // Relations
+  participant Participant      @relation(fields: [participantId], references: [id])
+  project     Project          @relation(fields: [projectId], references: [id])
+  answers     SessionAnswer[]
+  result      TestResult?
+  logs        ProctoringLog[]
+}
+
+model SessionAnswer {
+  id               String  @id @default(uuid())
+  sessionId        String
+  questionId       String
+  selectedOptionId String?
+  textAnswer       String?
+  timeSpentSeconds Int?
+
+  // Relations
+  session        TestSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question       Question        @relation(fields: [questionId], references: [id])
+  selectedOption QuestionOption? @relation(fields: [selectedOptionId], references: [id])
+
+  @@unique([sessionId, questionId])
+}
+
+model TestResult {
+  id               String   @id @default(uuid())
+  sessionId        String   @unique
+  totalScore       Float
+  scoreByDimension Json?
+  calculatedAt     DateTime @default(now())
+
+  // Relations
+  session TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model ProctoringLog {
+  id         String    @id @default(uuid())
+  sessionId  String
+  eventType  EventType
+  occurredAt DateTime  @default(now())
+
+  // Relations
+  session TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+// Session table for connect-pg-simple
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
+}

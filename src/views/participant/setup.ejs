@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 min-h-screen">
+  <div class="sm:mx-auto sm:w-full sm:max-w-2xl">
+    <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
+      <h2 class="text-2xl font-bold text-gray-900 text-center mb-6">Persiapan Ujian</h2>
+      
+      <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-blue-700">
+              Ujian ini berdurasi <strong><%= project.package.totalTimeMinutes %> menit</strong>. Pastikan Anda memiliki koneksi internet yang stabil sebelum memulai.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="text-lg font-medium text-gray-900 mb-3">Syarat & Ketentuan Pengawasan (Proctoring)</h3>
+      <ul class="space-y-4 mb-8">
+        <% if(project.proctoringFullscreen) { %>
+        <li class="flex items-start">
+          <svg class="flex-shrink-0 h-5 w-5 text-indigo-500 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+          <p class="ml-3 text-sm text-gray-600"><strong>Wajib Layar Penuh (Fullscreen):</strong> Sistem akan memaksa browser Anda masuk ke mode layar penuh. Aktivitas keluar dari layar penuh akan dicatat sebagai pelanggaran.</p>
+        </li>
+        <% } %>
+
+        <% if(project.proctoringTab) { %>
+        <li class="flex items-start">
+          <svg class="flex-shrink-0 h-5 w-5 text-indigo-500 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <p class="ml-3 text-sm text-gray-600"><strong>Pengawasan Berpindah Tab:</strong> Dilarang membuka tab, jendela browser, atau aplikasi lain. Sistem mendeteksi otomatis jika Anda meninggalkan halaman ujian.</p>
+        </li>
+        <% } %>
+
+        <% if(project.proctoringCamera) { %>
+        <li class="flex items-start">
+          <svg class="flex-shrink-0 h-5 w-5 text-indigo-500 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <p class="ml-3 text-sm text-gray-600"><strong>Kamera Aktif:</strong> Anda wajib mengizinkan akses kamera (Webcam). Wajah Anda akan diawasi selama ujian berlangsung.</p>
+        </li>
+        <% } %>
+      </ul>
+
+      <% if(project.proctoringCamera) { %>
+        <div id="camera-check-section" class="mb-6 p-4 border rounded-md border-gray-200 text-center">
+          <p class="text-sm font-medium text-gray-700 mb-2">Mohon izinkan akses kamera Anda</p>
+          <video id="camera-preview" autoplay muted class="w-full h-48 bg-black rounded-md mb-2 object-cover"></video>
+          <button id="btn-request-cam" class="bg-gray-200 text-gray-800 px-4 py-2 rounded text-sm hover:bg-gray-300">Izinkan Kamera</button>
+          <p id="cam-status" class="text-xs text-red-500 mt-2 hidden">Kamera belum diizinkan. Anda tidak bisa memulai tes tanpa kamera.</p>
+        </div>
+      <% } %>
+
+      <form action="/test/<%= project.accessToken %>/start" method="POST" id="start-form">
+        <div class="flex items-start mb-6">
+          <div class="flex items-center h-5">
+            <input id="agree" name="agree" type="checkbox" required class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+          </div>
+          <div class="ml-3 text-sm">
+            <label for="agree" class="font-medium text-gray-700">Saya mengerti dan menyetujui semua peraturan ujian di atas.</label>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-start" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Mulai Ujian Sekarang
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const needsCamera = <%= project.proctoringCamera ? 'true' : 'false' %>;
+    const btnStart = document.getElementById('btn-start');
+    const startForm = document.getElementById('start-form');
+    let camAllowed = !needsCamera;
+
+    if (needsCamera) {
+      btnStart.disabled = true;
+      btnStart.classList.add('opacity-50', 'cursor-not-allowed');
+      
+      const btnRequestCam = document.getElementById('btn-request-cam');
+      const videoPreview = document.getElementById('camera-preview');
+      const camStatus = document.getElementById('cam-status');
+
+      btnRequestCam.addEventListener('click', async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoPreview.srcObject = stream;
+          camAllowed = true;
+          btnStart.disabled = false;
+          btnStart.classList.remove('opacity-50', 'cursor-not-allowed');
+          btnRequestCam.style.display = 'none';
+          camStatus.style.display = 'none';
+        } catch (err) {
+          console.error(err);
+          camStatus.style.display = 'block';
+        }
+      });
+    }
+
+    startForm.addEventListener('submit', (e) => {
+      if (needsCamera && !camAllowed) {
+        e.preventDefault();
+        alert('Anda wajib mengizinkan akses kamera sebelum memulai!');
+      }
+    });
+  </script>
+</body>
+</html>

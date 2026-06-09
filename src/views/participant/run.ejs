@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .question-panel { display: none; }
+    .question-panel.active { display: block; }
+    
+    /* Anti-select to prevent copy pasting text easily */
+    .unselectable {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col unselectable">
+  <!-- Top Navigation -->
+  <nav class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="font-bold text-lg"><%= project.name %></div>
+      <div class="flex items-center space-x-4">
+        <div class="text-sm">
+          Sisa Waktu: <span id="timer" class="font-mono text-xl font-bold bg-indigo-800 px-3 py-1 rounded">00:00:00</span>
+        </div>
+        <form action="/test/<%= project.accessToken %>/submit" method="POST" id="submit-form">
+          <button type="button" onclick="confirmSubmit()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded text-sm transition-colors">
+            Selesai Ujian
+          </button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Layout -->
+  <div class="flex-grow max-w-7xl mx-auto w-full flex flex-col md:flex-row mt-6 px-4 gap-6 pb-12">
+    
+    <!-- Left: Question Area -->
+    <div class="flex-grow bg-white p-8 shadow-sm rounded-lg border border-gray-200">
+      <% questions.forEach((q, index) => { %>
+        <div id="q-<%= index %>" class="question-panel <%= index === 0 ? 'active' : '' %>" data-qid="<%= q.id %>" data-type="<%= q.questionType %>">
+          <div class="mb-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+              Soal <%= index + 1 %> dari <%= questions.length %>
+            </span>
+          </div>
+          <div class="text-lg font-medium text-gray-900 mb-6 prose">
+            <%= q.content %>
+          </div>
+
+          <div class="space-y-4">
+            <% if(q.questionType === 'MULTIPLE_CHOICE' || q.questionType === 'TRUE_FALSE' || q.questionType === 'LIKERT') { %>
+              <% q.options.forEach(opt => { %>
+                <% const isChecked = savedAnswers[q.id] && savedAnswers[q.id].optionId === opt.id; %>
+                <label class="relative flex items-start p-4 cursor-pointer border rounded-lg hover:bg-gray-50 <%= isChecked ? 'bg-indigo-50 border-indigo-200' : 'border-gray-200' %>" onclick="selectOption(this, <%= index %>, <%= opt.id %>)">
+                  <div class="flex items-center h-5">
+                    <input type="radio" name="answer_<%= q.id %>" value="<%= opt.id %>" class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" <%= isChecked ? 'checked' : '' %>>
+                  </div>
+                  <div class="ml-3 flex flex-col">
+                    <span class="block text-sm font-medium text-gray-900">
+                      <% if(q.questionType === 'MULTIPLE_CHOICE') { %>
+                        <span class="font-bold mr-2"><%= opt.label %>.</span>
+                      <% } %>
+                      <%= opt.content %>
+                    </span>
+                  </div>
+                </label>
+              <% }) %>
+            <% } else if(q.questionType === 'SHORT_ANSWER') { %>
+              <% const textVal = savedAnswers[q.id] ? savedAnswers[q.id].textAnswer : ''; %>
+              <textarea name="answer_<%= q.id %>" rows="4" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md border p-3" placeholder="Ketik jawaban Anda di sini..." onblur="saveTextAnswer(<%= index %>, this.value)"><%= textVal %></textarea>
+            <% } %>
+          </div>
+
+          <!-- Question Navigation Buttons -->
+          <div class="mt-10 flex justify-between border-t border-gray-100 pt-6">
+            <button onclick="navQ(<%= index - 1 %>)" class="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 <%= index === 0 ? 'invisible' : '' %>">
+              &larr; Sebelumnya
+            </button>
+            <button onclick="navQ(<%= index + 1 %>)" class="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 <%= index === questions.length - 1 ? 'invisible' : '' %>">
+              Selanjutnya &rarr;
+            </button>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- Right: Navigation Panel -->
+    <div class="w-full md:w-80 flex-shrink-0">
+      <div class="bg-white p-6 shadow-sm rounded-lg border border-gray-200 sticky top-24">
+        <h3 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Navigasi Soal</h3>
+        <div class="grid grid-cols-5 gap-2">
+          <% questions.forEach((q, index) => { %>
+            <% const hasAnswer = savedAnswers[q.id] && (savedAnswers[q.id].optionId || savedAnswers[q.id].textAnswer); %>
+            <button id="nav-btn-<%= index %>" onclick="navQ(<%= index %>)" class="h-10 w-full flex items-center justify-center rounded text-sm font-medium border <%= hasAnswer ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' %> <%= index === 0 ? 'ring-2 ring-indigo-500' : '' %>">
+              <%= index + 1 %>
+            </button>
+          <% }) %>
+        </div>
+
+        <!-- Proctoring Warning Box -->
+        <% if(project.proctoringCamera) { %>
+          <div class="mt-8 border-t border-gray-200 pt-6">
+            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Proctoring Aktif</h4>
+            <video id="mini-cam" autoplay muted class="w-full h-32 bg-black rounded-md object-cover transform scale-x-[-1]"></video>
+            <p class="text-xs text-gray-500 mt-2 text-center">Webcam Merekam</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const totalQuestions = <%= questions.length %>;
+    let currentIndex = 0;
+    const token = "<%= project.accessToken %>";
+    
+    // Timer Logic
+    let remaining = <%= remainingSeconds %>;
+    const timerEl = document.getElementById('timer');
+    
+    function formatTime(sec) {
+      const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+      const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    const interval = setInterval(() => {
+      remaining--;
+      if(remaining <= 0) {
+        clearInterval(interval);
+        timerEl.innerText = "00:00:00";
+        alert("Waktu Habis! Ujian akan disubmit secara otomatis.");
+        document.getElementById('submit-form').submit();
+      } else {
+        timerEl.innerText = formatTime(remaining);
+        if(remaining < 300) { // 5 minutes warning
+          timerEl.classList.remove('bg-indigo-800');
+          timerEl.classList.add('bg-red-600', 'animate-pulse');
+        }
+      }
+    }, 1000);
+
+    // Navigation Logic
+    function navQ(index) {
+      if(index < 0 || index >= totalQuestions) return;
+      
+      // Hide current
+      document.getElementById(`q-${currentIndex}`).classList.remove('active');
+      document.getElementById(`nav-btn-${currentIndex}`).classList.remove('ring-2', 'ring-indigo-500');
+      
+      // Show new
+      currentIndex = index;
+      document.getElementById(`q-${currentIndex}`).classList.add('active');
+      document.getElementById(`nav-btn-${currentIndex}`).classList.add('ring-2', 'ring-indigo-500');
+    }
+
+    // Auto-save Logic (AJAX)
+    async function saveAnswer(qId, payload) {
+      try {
+        await fetch(`/test/${token}/api/answer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId: qId, ...payload })
+        });
+        
+        // Mark navigation pill as answered
+        const navBtn = document.getElementById(`nav-btn-${currentIndex}`);
+        navBtn.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+        navBtn.classList.add('bg-indigo-100', 'text-indigo-700', 'border-indigo-200');
+      } catch(e) {
+        console.error('Failed to save answer', e);
+      }
+    }
+
+    function selectOption(labelEl, index, optionId) {
+      // Uncheck siblings visually
+      const parent = labelEl.parentElement;
+      const labels = parent.querySelectorAll('label');
+      labels.forEach(l => {
+        l.classList.remove('bg-indigo-50', 'border-indigo-200');
+        l.classList.add('border-gray-200');
+      });
+      
+      // Check current visually
+      labelEl.classList.add('bg-indigo-50', 'border-indigo-200');
+      labelEl.classList.remove('border-gray-200');
+      
+      const radio = labelEl.querySelector('input[type="radio"]');
+      radio.checked = true;
+
+      const qId = document.getElementById(`q-${index}`).dataset.qid;
+      saveAnswer(qId, { optionId });
+    }
+
+    function saveTextAnswer(index, val) {
+      const qId = document.getElementById(`q-${index}`).dataset.qid;
+      saveAnswer(qId, { textAnswer: val });
+    }
+
+    // Submit Logic
+    function confirmSubmit() {
+      if(confirm('Apakah Anda yakin ingin menyelesaikan ujian? Anda tidak dapat merubah jawaban lagi setelah ini.')) {
+        document.getElementById('submit-form').submit();
+      }
+    }
+
+    // ==========================================
+    // PROCTORING LOGIC
+    // ==========================================
+    const reqFullscreen = <%= project.proctoringFullscreen ? 'true' : 'false' %>;
+    const reqTab = <%= project.proctoringTab ? 'true' : 'false' %>;
+    const reqCam = <%= project.proctoringCamera ? 'true' : 'false' %>;
+
+    async function logProctor(eventType, details) {
+      fetch(`/test/${token}/api/proctoring`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventType, details })
+      });
+    }
+
+    // 1. Fullscreen Tracking
+    if (reqFullscreen) {
+      document.body.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(e => console.log(e));
+        }
+      }, { once: true });
+
+      document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+          alert("PERINGATAN: Anda keluar dari mode layar penuh! Kejadian ini dicatat.");
+          logProctor('FULLSCREEN_EXIT', 'Peserta keluar dari mode fullscreen');
+        }
+      });
+    }
+
+    // 2. Tab Blur / Visibility Tracking
+    if (reqTab) {
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'hidden') {
+          logProctor('TAB_SWITCH', 'Peserta meninggalkan/minimize tab browser');
+        } else if (document.visibilityState === 'visible') {
+          alert("PERINGATAN: Anda terdeteksi meninggalkan halaman ujian. Pelanggaran dicatat.");
+        }
+      });
+
+      window.addEventListener('blur', () => {
+        logProctor('WINDOW_BLUR', 'Jendela browser kehilangan fokus');
+      });
+    }
+
+    // 3. Mini Cam Feed
+    if (reqCam) {
+      const miniCam = document.getElementById('mini-cam');
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => { miniCam.srcObject = stream; })
+        .catch(err => {
+          logProctor('CAMERA_ERROR', 'Akses kamera terputus atau ditolak');
+        });
+    }
+
+    // Prevent Context Menu & Copy
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('copy', e => {
+      e.preventDefault();
+      logProctor('COPY_ATTEMPT', 'Peserta mencoba menyalin teks');
+    });
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<%- include('../../partials/header') %>
+
+<div class="py-6">
+  <div class="px-4 sm:px-6 md:px-0">
+    <div class="sm:flex sm:items-center">
+      <div class="sm:flex-auto flex items-center space-x-4">
+        <a href="/admin" class="text-gray-400 hover:text-gray-500">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </a>
+        <div>
+          <h1 class="text-2xl font-semibold text-gray-900">Daftar Klien</h1>
+          <p class="mt-2 text-sm text-gray-700">Daftar semua akun klien yang terdaftar di platform beserta nama institusi mereka.</p>
+        </div>
+      </div>
+      <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+        <a href="/admin/clients/create" class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+          Tambah Klien
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-4 sm:px-6 md:px-0 mt-8">
+    <div class="flex flex-col">
+      <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-300">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Institusi</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Kontak PIC</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tgl Daftar</th>
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                    <span class="sr-only">Aksi</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                <% if (clients.length === 0) { %>
+                  <tr>
+                    <td colspan="5" class="py-4 pl-4 pr-3 text-sm text-center text-gray-500 sm:pl-6">Belum ada data klien.</td>
+                  </tr>
+                <% } %>
+                <% clients.forEach(client => { %>
+                <tr>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                    <div class="flex items-center">
+                      <div class="h-10 w-10 flex-shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                        <%= client.clientProfile?.institutionName?.charAt(0).toUpperCase() || 'K' %>
+                      </div>
+                      <div class="ml-4">
+                        <div class="font-medium text-gray-900"><%= client.clientProfile?.institutionName || '-' %></div>
+                        <div class="text-gray-500"><%= client.email %></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <div class="text-gray-900"><%= client.name %></div>
+                    <div class="text-gray-500"><%= client.clientProfile?.contactPhone || '-' %></div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <% if (client.isActive) { %>
+                      <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">Aktif</span>
+                    <% } else { %>
+                      <span class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold leading-5 text-red-800">Nonaktif</span>
+                    <% } %>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <%= client.createdAt.toLocaleDateString('id-ID') %>
+                  </td>
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <a href="/admin/clients/<%= client.id %>/edit" class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</a>
+                    <form action="/admin/clients/<%= client.id %>/delete" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus klien ini beserta semua datanya?');">
+                      <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
+                    </form>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

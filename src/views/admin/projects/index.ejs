@@ -1,0 +1,113 @@
+<%- include('../../partials/header') %>
+
+<div class="py-6">
+  <div class="px-4 sm:px-6 md:px-0">
+    <div class="sm:flex sm:items-center">
+      <div class="sm:flex-auto flex items-center space-x-4">
+        <a href="/admin" class="text-gray-400 hover:text-gray-500">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </a>
+        <div>
+          <h1 class="text-2xl font-semibold text-gray-900">Manajemen Project Tes</h1>
+          <p class="mt-2 text-sm text-gray-700">Daftar project/sesi tes yang mengikat Klien dengan Paket Tes tertentu.</p>
+        </div>
+      </div>
+      <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+        <a href="/admin/projects/create" class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+          Buat Project
+        </a>
+      </div>
+    </div>
+    
+    <% if (error) { %>
+      <div class="rounded-md bg-red-50 p-4 mt-6">
+        <div class="flex">
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800"><%= error %></h3>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="mt-8 flex flex-col">
+      <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-300">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nama Project</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Klien</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Paket Tes</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Link Akses</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Masa Aktif</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                  <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                    <span class="sr-only">Aksi</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                <% projects.forEach(p => { %>
+                <tr>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6"><%= p.name %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><%= p.clientProfile ? p.clientProfile.institutionName : '-' %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"><%= p.package ? p.package.name : '-' %></td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <div class="flex items-center space-x-2">
+                      <input type="text" readonly value="<%= process.env.BASE_URL || 'http://localhost:3000' %>/test/<%= p.accessToken %>" class="text-xs border-gray-300 rounded-md p-1 w-48 bg-gray-50" id="link-<%= p.id %>">
+                      <button onclick="copyLink('link-<%= p.id %>')" class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">Copy</button>
+                    </div>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <% if (p.activeFrom || p.activeUntil) { %>
+                      <div class="text-xs">
+                        <div>Mulai: <%= p.activeFrom ? p.activeFrom.toLocaleString('id-ID') : '-' %></div>
+                        <div>Selesai: <%= p.activeUntil ? p.activeUntil.toLocaleString('id-ID') : '-' %></div>
+                      </div>
+                    <% } else { %>
+                      Selalu Aktif
+                    <% } %>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <% if(p.isActive) { %>
+                      <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">Aktif</span>
+                    <% } else { %>
+                      <span class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold leading-5 text-red-800">Nonaktif</span>
+                    <% } %>
+                  </td>
+                  <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <a href="/admin/projects/<%= p.id %>/edit" class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</a>
+                    <form action="/admin/projects/<%= p.id %>/delete" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus project ini? Semua data peserta dan hasil tes akan ikut terhapus!');">
+                      <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
+                    </form>
+                  </td>
+                </tr>
+                <% }) %>
+                <% if(projects.length === 0) { %>
+                  <tr>
+                    <td colspan="7" class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 text-center sm:pl-6">Belum ada project yang terdaftar.</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyLink(id) {
+    var copyText = document.getElementById(id);
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    alert("Link berhasil disalin!");
+  }
+</script>
+
+<%- include('../../partials/footer') %>
