@@ -3,7 +3,6 @@ const express = require("express");
 const session = require("express-session");
 const MySQLStore = require('express-mysql-session')(session);
 const methodOverride = require("method-override");
-const expressLayouts = require("express-ejs-layouts");
 const flash = require('connect-flash');
 const multer = require('multer');
 const path = require("path");
@@ -28,8 +27,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "src/public")));
 
 // View Engine
-app.use(expressLayouts);
-app.set("layout", "layouts/main");
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "src/views"));
 
