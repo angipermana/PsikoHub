@@ -32,6 +32,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "src/views"));
 
 // Session configuration
+app.set("trust proxy", 1); // Trust Hostinger's reverse proxy for secure cookies
 app.use(
   session({
     store: sessionStore,
