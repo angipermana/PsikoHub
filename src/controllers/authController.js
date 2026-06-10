@@ -11,14 +11,17 @@ exports.showLogin = (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.isActive) {
-      return res.render("auth/login", { error: "Invalid credentials or inactive account." });
+    const user = await prisma.user.findUnique({ where: { email: email.trim() } });
+    if (!user) {
+      return res.render("auth/login", { error: "Debug: User not found in database for email: " + email });
+    }
+    if (!user.isActive) {
+      return res.render("auth/login", { error: "Debug: Account is inactive." });
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      return res.render("auth/login", { error: "Invalid credentials." });
+      return res.render("auth/login", { error: "Debug: Password mismatch." });
     }
 
     req.session.user = {
@@ -27,12 +30,17 @@ exports.login = async (req, res) => {
       role: user.role,
     };
 
-    if (user.role === "SUPER_ADMIN") return res.redirect("/admin");
-    if (user.role === "CLIENT") return res.redirect("/client");
-    return res.redirect("/test/dashboard");
+    req.session.save((err) => {
+      if (err) {
+        return res.render("auth/login", { error: "Debug: Session save error: " + err.message });
+      }
+      if (user.role === "SUPER_ADMIN") return res.redirect("/admin");
+      if (user.role === "CLIENT") return res.redirect("/client");
+      return res.redirect("/test/dashboard");
+    });
   } catch (error) {
     console.error(error);
-    res.render("auth/login", { error: "Server error occurred." });
+    res.render("auth/login", { error: "Debug Server Error: " + error.message });
   }
 };
 
