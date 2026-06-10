@@ -292,7 +292,7 @@ exports.submitTest = async (req, res) => {
       where: { id: req.session.testSessionId },
       data: {
         status: 'COMPLETED',
-        finishedAt: new Date()
+        submittedAt: new Date()
       }
     });
     res.redirect(`/test/${token}/finish`);

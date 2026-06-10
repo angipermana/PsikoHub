@@ -59,12 +59,12 @@ app.get("/", (req, res) => {
 
 const authRoutes = require("./src/routes/auth");
 const adminRoutes = require("./src/routes/admin");
-// const clientRoutes = require("./src/routes/client");
+const clientRoutes = require("./src/routes/client");
 const testRoutes = require("./src/routes/test");
 
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
-// app.use("/client", clientRoutes);
+app.use("/client", clientRoutes);
 app.use("/test", testRoutes);
 
 // 404 Handler
