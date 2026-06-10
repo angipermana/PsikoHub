@@ -212,11 +212,3 @@ model ProctoringLog {
   session TestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
-// Session table for connect-pg-simple
-model Session {
-  sid    String   @id @db.VarChar
-  sess   Json     @db.Json
-  expire DateTime @db.Timestamp(6)
-
-  @@index([expire], map: "IDX_session_expire")
-}

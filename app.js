@@ -22,11 +22,14 @@ const dbOptions = {
 const sessionStore = new MySQLStore(dbOptions);
 
 // Middleware
+app.use(methodOverride("_method"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "src/public")));
 
 // View Engine
+app.use(expressLayouts);
+app.set("layout", "layouts/main");
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "src/views"));
 
@@ -44,6 +47,14 @@ app.use(
     },
   })
 );
+
+// Flash messages
+app.use(flash());
+app.use((req, res, next) => {
+  res.locals.success = req.flash('success');
+  res.locals.error = req.flash('error');
+  next();
+});
 
 // Add user info to locals for views
 app.use((req, res, next) => {
@@ -76,6 +87,6 @@ app.use((req, res) => {
   res.status(404).render("partials/404");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server is running on port ${PORT}`);
 });
