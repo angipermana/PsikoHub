@@ -11,12 +11,30 @@ const mysql = require("mysql2");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+let dbHost = process.env.DB_HOST ? process.env.DB_HOST.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '';
+let dbUser = process.env.DB_USER ? process.env.DB_USER.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '';
+let dbPassword = process.env.DB_PASSWORD ? process.env.DB_PASSWORD.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '';
+let dbName = process.env.DB_NAME ? process.env.DB_NAME.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '';
+
+if (!dbHost && process.env.DATABASE_URL) {
+  try {
+    const dbUrlStr = process.env.DATABASE_URL.replace(/^['"]|['"]$/g, '').trim();
+    const dbUrl = new URL(dbUrlStr);
+    dbHost = dbUrl.hostname;
+    dbUser = dbUrl.username;
+    dbPassword = dbUrl.password;
+    dbName = dbUrl.pathname.replace(/^\//, '');
+  } catch (e) {
+    console.error("Failed to parse DATABASE_URL for session store:", e.message);
+  }
+}
+
 // Database pool for session store
 const dbOptions = {
-  host: process.env.DB_HOST ? process.env.DB_HOST.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '',
-  user: process.env.DB_USER ? process.env.DB_USER.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '',
-  password: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '',
-  database: process.env.DB_NAME ? process.env.DB_NAME.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '',
+  host: dbHost || 'localhost',
+  user: dbUser || 'root',
+  password: dbPassword || '',
+  database: dbName || 'psikotes_db',
   connectionLimit: 2,
 };
 const sessionStore = new MySQLStore(dbOptions);
@@ -61,38 +79,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Hostinger Passenger Fix: Strictly disconnect Prisma BEFORE responding to prevent 'timer has gone away' PANIC
+// Hostinger Passenger Fix: Strictly disconnect Prisma AFTER responding to prevent 'timer has gone away' PANIC
+// Utilizing res.on('finish') ensures express-session has successfully saved the session data before Prisma disconnects.
 const prisma = require('./src/config/db');
 app.use((req, res, next) => {
-  const originalSend = res.send;
-  const originalRender = res.render;
-  const originalRedirect = res.redirect;
-  const originalJson = res.json;
-
-  res.send = function (...args) {
-    prisma.$disconnect().catch(()=>{}).finally(() => {
-      originalSend.apply(this, args);
+  res.on('finish', () => {
+    setImmediate(() => {
+      prisma.$disconnect().catch(() => {});
     });
-  };
-  
-  res.render = function (...args) {
-    prisma.$disconnect().catch(()=>{}).finally(() => {
-      originalRender.apply(this, args);
-    });
-  };
-  
-  res.redirect = function (...args) {
-    prisma.$disconnect().catch(()=>{}).finally(() => {
-      originalRedirect.apply(this, args);
-    });
-  };
-
-  res.json = function (...args) {
-    prisma.$disconnect().catch(()=>{}).finally(() => {
-      originalJson.apply(this, args);
-    });
-  };
-
+  });
   next();
 });
 
