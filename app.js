@@ -1,17 +1,25 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
-const pgSession = require("connect-pg-simple")(session);
-const { Pool } = require("pg");
+const MySQLStore = require('express-mysql-session')(session);
+const methodOverride = require("method-override");
+const expressLayouts = require("express-ejs-layouts");
+const flash = require('connect-flash');
+const multer = require('multer');
 const path = require("path");
+const mysql = require("mysql2");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Database pool for session store
-const dbPool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const dbOptions = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+};
+const sessionStore = new MySQLStore(dbOptions);
 
 // Middleware
 app.use(express.json());
@@ -25,11 +33,7 @@ app.set("views", path.join(__dirname, "src/views"));
 // Session configuration
 app.use(
   session({
-    store: new pgSession({
-      pool: dbPool,
-      tableName: "Session",
-      createTableIfMissing: true,
-    }),
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || "fallback_secret",
     resave: false,
     saveUninitialized: false,
