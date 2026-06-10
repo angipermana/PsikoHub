@@ -23,13 +23,27 @@
       </div>
     <% } %>
 
-    <form action="/admin/questions/<%= question.id %>" method="POST" class="space-y-8 divide-y divide-gray-200 bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+    <form action="/admin/questions/<%= question.id %>" method="POST" enctype="multipart/form-data" class="space-y-8 divide-y divide-gray-200 bg-white p-8 rounded-lg shadow-sm border border-gray-100">
       
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
         <div class="sm:col-span-6">
           <label for="content" class="block text-sm font-medium text-gray-700">Pertanyaan *</label>
           <div class="mt-1">
             <textarea id="content" name="content" rows="4" required class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md p-2"><%= question.content %></textarea>
+          </div>
+        </div>
+
+        <div class="sm:col-span-6">
+          <label for="questionImage" class="block text-sm font-medium text-gray-700">Gambar Soal (Opsional)</label>
+          <% if (question.imageUrl) { %>
+            <div class="mt-2 mb-2">
+              <img src="<%= question.imageUrl %>" alt="Question Image" class="h-32 object-contain border rounded p-1">
+              <input type="hidden" name="existingQuestionImage" value="<%= question.imageUrl %>">
+            </div>
+            <p class="text-xs text-gray-500 mb-1">Upload gambar baru untuk mengganti gambar di atas.</p>
+          <% } %>
+          <div class="mt-1">
+            <input type="file" id="questionImage" name="questionImage" accept="image/*" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
           </div>
         </div>
 
@@ -66,17 +80,27 @@
         </div>
         
         <div class="mt-6 space-y-4">
-          <% for(let i=0; i<4; i++) { 
-               let opt = question.options[i] || { label: '', content: '', scoreValue: 0 };
+          <% for(let i=0; i<5; i++) { 
+               let opt = question.options[i] || { label: '', content: '', scoreValue: 0, imageUrl: null };
           %>
-          <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-md">
+          <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-md flex-wrap">
             <div class="w-16">
               <% if(i===0) { %><label class="block text-xs text-gray-500 mb-1">Label</label><% } %>
               <input type="text" name="options[<%= i %>][label]" value="<%= opt.label %>" placeholder="<%= String.fromCharCode(65+i) %>" class="block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
             </div>
-            <div class="flex-1">
+            <div class="flex-1 min-w-[200px]">
               <% if(i===0) { %><label class="block text-xs text-gray-500 mb-1">Teks Pilihan</label><% } %>
               <input type="text" name="options[<%= i %>][content]" value="<%= opt.content %>" class="block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+            </div>
+            <div class="flex-1 min-w-[200px]">
+              <% if(i===0) { %><label class="block text-xs text-gray-500 mb-1">Gambar Pilihan</label><% } %>
+              <% if(opt.imageUrl) { %>
+                <div class="flex items-center gap-2 mb-1">
+                  <img src="<%= opt.imageUrl %>" class="h-10 w-10 object-cover border rounded">
+                  <input type="hidden" name="options[<%= i %>][existingImageUrl]" value="<%= opt.imageUrl %>">
+                </div>
+              <% } %>
+              <input type="file" name="optionImage_<%= i %>" accept="image/*" class="block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
             </div>
             <div class="w-24">
               <% if(i===0) { %><label class="block text-xs text-gray-500 mb-1">Skor</label><% } %>

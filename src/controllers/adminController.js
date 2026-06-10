@@ -158,13 +158,27 @@ exports.storeQuestion = async (req, res) => {
   const { content, questionType, dimensionGroup, categoryLabel, timeLimitSeconds, isRandomizable, options } = req.body;
   
   try {
-    const parsedOptions = options ? options.filter(opt => opt.content.trim() !== '').map((opt, index) => ({
-      label: opt.label || String.fromCharCode(65 + index), // A, B, C...
-      content: opt.content,
-      scoreValue: parseInt(opt.scoreValue) || 0,
-      isReverseScored: opt.isReverseScored === 'true',
-      orderIndex: index + 1
-    })) : [];
+    let questionImageUrl = null;
+    if (req.files && req.files.length > 0) {
+      const qImage = req.files.find(f => f.fieldname === 'questionImage');
+      if (qImage) questionImageUrl = `/uploads/questions/${qImage.filename}`;
+    }
+
+    const parsedOptions = options ? options.map((opt, index) => {
+      let optImageUrl = null;
+      if (req.files && req.files.length > 0) {
+        const oImage = req.files.find(f => f.fieldname === `optionImage_${index}`);
+        if (oImage) optImageUrl = `/uploads/questions/${oImage.filename}`;
+      }
+      return {
+        label: opt.label || String.fromCharCode(65 + index), // A, B, C...
+        content: opt.content || '',
+        scoreValue: parseInt(opt.scoreValue) || 0,
+        isReverseScored: opt.isReverseScored === 'true',
+        orderIndex: index + 1,
+        imageUrl: optImageUrl || opt.existingImageUrl || null
+      };
+    }).filter(opt => opt.content.trim() !== '' || opt.imageUrl !== null) : [];
 
     await prisma.question.create({
       data: {
@@ -175,6 +189,7 @@ exports.storeQuestion = async (req, res) => {
         categoryLabel,
         timeLimitSeconds: timeLimitSeconds ? parseInt(timeLimitSeconds) : null,
         isRandomizable: isRandomizable === 'true',
+        imageUrl: questionImageUrl,
         options: {
           create: parsedOptions
         }
@@ -255,16 +270,30 @@ exports.updateQuestion = async (req, res) => {
   const { content, questionType, dimensionGroup, categoryLabel, timeLimitSeconds, isRandomizable, options } = req.body;
   
   try {
+    let questionImageUrl = req.body.existingQuestionImage || null;
+    if (req.files && req.files.length > 0) {
+      const qImage = req.files.find(f => f.fieldname === 'questionImage');
+      if (qImage) questionImageUrl = `/uploads/questions/${qImage.filename}`;
+    }
+
     // Delete existing options
     await prisma.questionOption.deleteMany({ where: { questionId: id } });
 
-    const parsedOptions = options ? options.filter(opt => opt.content.trim() !== '').map((opt, index) => ({
-      label: opt.label || String.fromCharCode(65 + index),
-      content: opt.content,
-      scoreValue: parseInt(opt.scoreValue) || 0,
-      isReverseScored: opt.isReverseScored === 'true',
-      orderIndex: index + 1
-    })) : [];
+    const parsedOptions = options ? options.map((opt, index) => {
+      let optImageUrl = opt.existingImageUrl || null;
+      if (req.files && req.files.length > 0) {
+        const oImage = req.files.find(f => f.fieldname === `optionImage_${index}`);
+        if (oImage) optImageUrl = `/uploads/questions/${oImage.filename}`;
+      }
+      return {
+        label: opt.label || String.fromCharCode(65 + index),
+        content: opt.content || '',
+        scoreValue: parseInt(opt.scoreValue) || 0,
+        isReverseScored: opt.isReverseScored === 'true',
+        orderIndex: index + 1,
+        imageUrl: optImageUrl
+      };
+    }).filter(opt => opt.content.trim() !== '' || opt.imageUrl !== null) : [];
 
     await prisma.question.update({
       where: { id },
@@ -275,6 +304,7 @@ exports.updateQuestion = async (req, res) => {
         categoryLabel,
         timeLimitSeconds: timeLimitSeconds ? parseInt(timeLimitSeconds) : null,
         isRandomizable: isRandomizable === 'true',
+        imageUrl: questionImageUrl,
         options: {
           create: parsedOptions
         }

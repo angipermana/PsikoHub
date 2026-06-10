@@ -15,15 +15,16 @@ router.post("/clients/:id", adminController.updateClient);
 router.post("/clients/:id/delete", adminController.deleteClient);
 
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
+const csvUpload = multer({ dest: "uploads/" });
+const imageUpload = require("../middlewares/upload");
 
 router.get("/questions", adminController.questions);
 router.get("/questions/create", adminController.createQuestion);
-router.post("/questions", adminController.storeQuestion);
+router.post("/questions", imageUpload.any(), adminController.storeQuestion);
 router.get("/questions/import", adminController.importQuestionView);
-router.post("/questions/import", upload.single("csvFile"), adminController.importQuestionProcess);
+router.post("/questions/import", csvUpload.single("csvFile"), adminController.importQuestionProcess);
 router.get("/questions/:id/edit", adminController.editQuestion);
-router.post("/questions/:id", adminController.updateQuestion);
+router.post("/questions/:id", imageUpload.any(), adminController.updateQuestion);
 router.post("/questions/:id/delete", adminController.deleteQuestion);
 
 router.get("/packages", adminController.packages);

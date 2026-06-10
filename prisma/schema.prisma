@@ -73,6 +73,7 @@ model Question {
   timeLimitSeconds Int?
   isRandomizable   Boolean      @default(true)
   orderIndex       Int?
+  imageUrl         String?
 
   // Relations
   user            User              @relation("CreatedQuestions", fields: [createdBy], references: [id])
@@ -89,6 +90,7 @@ model QuestionOption {
   scoreValue      Int     @default(0)
   isReverseScored Boolean @default(false)
   orderIndex      Int?
+  imageUrl        String?
 
   // Relations
   question       Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
