@@ -13,10 +13,11 @@ const PORT = process.env.PORT || 3000;
 
 // Database pool for session store
 const dbOptions = {
-  host: process.env.DB_HOST ? process.env.DB_HOST.replace(/^['"]|['"]$/g, '').trim() : '',
-  user: process.env.DB_USER ? process.env.DB_USER.replace(/^['"]|['"]$/g, '').trim() : '',
-  password: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.replace(/^['"]|['"]$/g, '').trim() : '',
-  database: process.env.DB_NAME ? process.env.DB_NAME.replace(/^['"]|['"]$/g, '').trim() : '',
+  host: process.env.DB_HOST ? process.env.DB_HOST.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '',
+  user: process.env.DB_USER ? process.env.DB_USER.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '',
+  password: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '',
+  database: process.env.DB_NAME ? process.env.DB_NAME.replace(/^['"]|['"]$/g, '').replace(/\\/g, '').trim() : '',
+  connectionLimit: 2,
 };
 const sessionStore = new MySQLStore(dbOptions);
 
