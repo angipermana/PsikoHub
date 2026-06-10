@@ -15,7 +15,7 @@ exports.dashboard = async (req, res) => {
       include: {
         package: true,
         _count: {
-          select: { participants: true, testSessions: true }
+          select: { participants: true, sessions: true }
         }
       },
       orderBy: { createdAt: 'desc' }
