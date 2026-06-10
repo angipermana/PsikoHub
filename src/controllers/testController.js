@@ -240,19 +240,19 @@ exports.saveAnswer = async (req, res) => {
   try {
     await prisma.sessionAnswer.upsert({
       where: {
-        testSessionId_questionId: {
-          testSessionId: req.session.testSessionId,
-          questionId: parseInt(questionId)
+        sessionId_questionId: {
+          sessionId: req.session.testSessionId,
+          questionId: questionId
         }
       },
       update: {
-        selectedOptionId: optionId ? parseInt(optionId) : null,
+        selectedOptionId: optionId ? optionId : null,
         textAnswer: textAnswer || null
       },
       create: {
-        testSessionId: req.session.testSessionId,
-        questionId: parseInt(questionId),
-        selectedOptionId: optionId ? parseInt(optionId) : null,
+        sessionId: req.session.testSessionId,
+        questionId: questionId,
+        selectedOptionId: optionId ? optionId : null,
         textAnswer: textAnswer || null
       }
     });
