@@ -44,19 +44,6 @@ exports.logout = (req, res) => {
 
 exports.forceSeed = async (req, res) => {
   try {
-    const { execSync } = require('child_process');
-    try {
-      execSync('/opt/alt/alt-nodejs22/root/usr/bin/node node_modules/prisma/build/index.js db push --accept-data-loss', {
-        env: { ...process.env },
-        cwd: process.cwd(),
-        stdio: 'pipe'
-      });
-    } catch (e) {
-      console.log('Push warning/error:', e.message);
-      if (e.stdout) console.log(e.stdout.toString());
-      if (e.stderr) console.log(e.stderr.toString());
-    }
-
     const email = 'admin@psikotes.com';
     const password = 'password123';
     const passwordHash = await bcrypt.hash(password, 12);
