@@ -18,7 +18,7 @@ exports.dashboard = async (req, res) => {
           select: { participants: true, sessions: true }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { activeFrom: 'desc' }
     });
 
     res.render("client/dashboard", {
