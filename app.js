@@ -60,12 +60,38 @@ app.use((req, res, next) => {
   next();
 });
 
-// Hostinger Passenger Fix: Disconnect Prisma after request to prevent 'timer has gone away' PANIC
+// Hostinger Passenger Fix: Strictly disconnect Prisma BEFORE responding to prevent 'timer has gone away' PANIC
 const prisma = require('./src/config/db');
 app.use((req, res, next) => {
-  res.on('finish', () => {
-    prisma.$disconnect().catch(() => {});
-  });
+  const originalSend = res.send;
+  const originalRender = res.render;
+  const originalRedirect = res.redirect;
+  const originalJson = res.json;
+
+  res.send = function (...args) {
+    prisma.$disconnect().catch(()=>{}).finally(() => {
+      originalSend.apply(this, args);
+    });
+  };
+  
+  res.render = function (...args) {
+    prisma.$disconnect().catch(()=>{}).finally(() => {
+      originalRender.apply(this, args);
+    });
+  };
+  
+  res.redirect = function (...args) {
+    prisma.$disconnect().catch(()=>{}).finally(() => {
+      originalRedirect.apply(this, args);
+    });
+  };
+
+  res.json = function (...args) {
+    prisma.$disconnect().catch(()=>{}).finally(() => {
+      originalJson.apply(this, args);
+    });
+  };
+
   next();
 });
 
